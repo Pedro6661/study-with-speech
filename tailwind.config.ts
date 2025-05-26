@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,15 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Cores educacionais personalizadas
+				education: {
+					primary: '#3B82F6',
+					secondary: '#8B5CF6',
+					accent: '#F59E0B',
+					success: '#10B981',
+					warning: '#F59E0B',
+					info: '#3B82F6'
 				}
 			},
 			borderRadius: {
@@ -84,11 +94,38 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-gentle': {
+					'0%, 100%': {
+						opacity: '1'
+					},
+					'50%': {
+						opacity: '0.7'
+					}
+				},
+				'bounce-subtle': {
+					'0%, 20%, 53%, 80%, 100%': {
+						transform: 'translate3d(0,0,0)'
+					},
+					'40%, 43%': {
+						transform: 'translate3d(0, -15px, 0)'
+					},
+					'70%': {
+						transform: 'translate3d(0, -5px, 0)'
+					},
+					'90%': {
+						transform: 'translate3d(0, -2px, 0)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-gentle': 'pulse-gentle 2s ease-in-out infinite',
+				'bounce-subtle': 'bounce-subtle 1s ease-in-out'
+			},
+			fontFamily: {
+				'education': ['Inter', 'system-ui', 'sans-serif']
 			}
 		}
 	},
