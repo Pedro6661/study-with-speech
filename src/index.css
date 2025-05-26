@@ -107,6 +107,19 @@
   .knowledge-gradient {
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   }
+
+  /* Novos gradientes jovens */
+  .youth-gradient-purple {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .youth-gradient-blue {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  }
+  
+  .youth-gradient-vibrant {
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+  }
 }
 
 /* Animações personalizadas para elementos educacionais */
@@ -133,10 +146,48 @@
   animation-delay: -0.16s;
 }
 
+/* Animações jovens e modernas */
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.3) rotate(-5deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05) rotate(2deg);
+    opacity: 0.8;
+  }
+  70% {
+    transform: scale(0.9) rotate(-1deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(147, 51, 234, 0.6);
+  }
+}
+
+.bounce-in {
+  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
 /* Estilos para melhor legibilidade do texto */
 .chat-content {
-  line-height: 1.6;
+  line-height: 1.7;
   word-spacing: 0.1em;
+  letter-spacing: 0.02em;
 }
 
 .chat-content p {
@@ -149,24 +200,27 @@
 }
 
 .chat-content li {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
-/* Estilização para código inline e blocos */
+/* Estilização moderna para código inline e blocos */
 .chat-content code {
-  background: rgba(0, 0, 0, 0.1);
-  padding: 0.2rem 0.4rem;
-  border-radius: 0.25rem;
-  font-family: 'Courier New', monospace;
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.1), rgba(59, 130, 246, 0.1));
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.5rem;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
   font-size: 0.9em;
+  border: 1px solid rgba(147, 51, 234, 0.2);
 }
 
 .chat-content pre {
-  background: rgba(0, 0, 0, 0.05);
-  padding: 1rem;
-  border-radius: 0.5rem;
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.05), rgba(59, 130, 246, 0.05));
+  padding: 1.5rem;
+  border-radius: 1rem;
   overflow-x: auto;
-  margin: 0.75rem 0;
+  margin: 1rem 0;
+  border: 1px solid rgba(147, 51, 234, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Responsividade aprimorada */
@@ -176,6 +230,46 @@
   }
   
   .chat-message {
-    max-width: 85%;
+    max-width: 90%;
   }
+
+  .youth-mobile-optimized {
+    font-size: 0.9rem;
+  }
+}
+
+/* Efeitos hover modernos */
+.modern-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Estilo para botões de ação */
+.action-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 9999px;
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+}
+
+/* Melhorias para acessibilidade */
+.high-contrast {
+  filter: contrast(1.2);
+}
+
+.focus-visible {
+  outline: 3px solid #667eea;
+  outline-offset: 2px;
 }
