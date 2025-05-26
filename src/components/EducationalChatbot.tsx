@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Mic, MicOff, Settings, Volume2, VolumeX, BookOpen, User, LogOut } from 'lucide-react';
+import { Send, Mic, MicOff, Settings, Volume2, VolumeX, BookOpen, User, LogOut, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ChatMessage from './ChatMessage';
 import ChatSettings from './ChatSettings';
