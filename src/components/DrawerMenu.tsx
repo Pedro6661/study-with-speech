@@ -1,12 +1,13 @@
-
 import React from 'react';
 import { 
   Sheet, 
   SheetContent, 
   SheetHeader, 
   SheetTitle,
+  SheetClose
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   User, 
   Settings, 
@@ -14,7 +15,8 @@ import {
   BarChart3, 
   LogOut,
   Home,
-  Save
+  Save,
+  X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -45,6 +47,9 @@ const DrawerMenu: React.FC<DrawerMenuProps> = ({
   };
 
   const handleNavigation = (path: string) => {
+    if (path === '/') {
+      localStorage.removeItem('sws-user');
+    }
     navigate(path);
     onClose();
   };
@@ -79,23 +84,37 @@ const DrawerMenu: React.FC<DrawerMenuProps> = ({
       description: `${savedMessagesCount} mensagens salvas`,
       action: () => handleNavigation('/saved'),
       color: 'from-orange-500 to-yellow-500'
+    },
+    {
+      icon: LogOut,
+      title: 'Voltar ao Login',
+      description: 'Sair e voltar à tela inicial',
+      action: () => handleNavigation('/'),
+      color: 'from-red-500 to-pink-500'
     }
   ];
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="w-80 p-0 bg-gradient-to-b from-purple-50 to-blue-50">
+      <SheetContent side="left" className="w-80 p-0 bg-gradient-to-b from-purple-50 to-blue-50" onPointerDownOutside={onClose}>
         <SheetHeader className="p-6 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500 text-white">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-white/20 rounded-full p-3">
-              <BookOpen className="w-8 h-8" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 rounded-full p-3">
+                <BookOpen className="w-8 h-8" />
+              </div>
+              <div>
+                <SheetTitle className="text-white text-xl font-bold">
+                  Study With Speech
+                </SheetTitle>
+                <p className="text-white/90 text-sm">SWS Assistant</p>
+              </div>
             </div>
-            <div>
-              <SheetTitle className="text-white text-xl font-bold">
-                Study With Speech
-              </SheetTitle>
-              <p className="text-white/90 text-sm">SWS Assistant</p>
-            </div>
+            <SheetClose asChild>
+              <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full">
+                <X className="w-5 h-5" />
+              </Button>
+            </SheetClose>
           </div>
           
           {/* Perfil do usuário */}
@@ -112,60 +131,62 @@ const DrawerMenu: React.FC<DrawerMenuProps> = ({
           </Card>
         </SheetHeader>
 
-        <div className="flex-1 p-6 space-y-4">
-          {/* Estatísticas rápidas */}
-          <Card className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-0 shadow-lg">
-            <h3 className="font-bold text-green-800 mb-2 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Seu Progresso
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-green-700">
-                <span>Perguntas hoje:</span>
-                <span className="font-semibold">{totalQuestions}</span>
-              </div>
-              <div className="flex justify-between text-green-700">
-                <span>Respostas salvas:</span>
-                <span className="font-semibold">{savedMessagesCount}</span>
-              </div>
-            </div>
-          </Card>
-
-          {/* Menu de navegação */}
-          <div className="space-y-3">
-            {menuItems.map((item, index) => (
-              <Button
-                key={index}
-                onClick={item.action}
-                variant="ghost"
-                className="w-full justify-start h-auto p-4 hover:bg-white/60 transition-all"
-              >
-                <div className="flex items-center gap-4 w-full">
-                  <div className={`bg-gradient-to-r ${item.color} rounded-full p-2`}>
-                    <item.icon className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-800">{item.title}</p>
-                    <p className="text-sm text-gray-600">{item.description}</p>
-                  </div>
+        <ScrollArea className="h-[calc(100vh-200px)]">
+          <div className="flex-1 p-6 space-y-4">
+            {/* Estatísticas rápidas */}
+            <Card className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-0 shadow-lg">
+              <h3 className="font-bold text-green-800 mb-2 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Seu Progresso
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-green-700">
+                  <span>Perguntas hoje:</span>
+                  <span className="font-semibold">{totalQuestions}</span>
                 </div>
-              </Button>
-            ))}
-          </div>
+                <div className="flex justify-between text-green-700">
+                  <span>Respostas salvas:</span>
+                  <span className="font-semibold">{savedMessagesCount}</span>
+                </div>
+              </div>
+            </Card>
 
-          {/* Dicas */}
-          <Card className="p-4 bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50 border-0 shadow-lg">
-            <h3 className="font-bold text-purple-800 mb-3 flex items-center gap-2">
-              ✨ Dicas para Jovens Estudantes
-            </h3>
-            <ul className="text-sm text-purple-700 space-y-2">
-              <li className="flex items-center gap-2">🎧 Use fones para melhor experiência sonora</li>
-              <li className="flex items-center gap-2">⭐ Avalie as respostas para personalizar</li>
-              <li className="flex items-center gap-2">💾 Salve conteúdos importantes</li>
-              <li className="flex items-center gap-2">🗣️ Fale com o microfone para perguntas</li>
-            </ul>
-          </Card>
-        </div>
+            {/* Menu de navegação */}
+            <div className="space-y-3">
+              {menuItems.map((item, index) => (
+                <Button
+                  key={index}
+                  onClick={item.action}
+                  variant="ghost"
+                  className="w-full justify-start h-auto p-4 hover:bg-white/60 transition-all"
+                >
+                  <div className="flex items-center gap-4 w-full">
+                    <div className={`bg-gradient-to-r ${item.color} rounded-full p-2`}>
+                      <item.icon className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-gray-800">{item.title}</p>
+                      <p className="text-sm text-gray-600">{item.description}</p>
+                    </div>
+                  </div>
+                </Button>
+              ))}
+            </div>
+
+            {/* Dicas */}
+            <Card className="p-4 bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50 border-0 shadow-lg">
+              <h3 className="font-bold text-purple-800 mb-3 flex items-center gap-2">
+                ✨ Dicas para Jovens Estudantes
+              </h3>
+              <ul className="text-sm text-purple-700 space-y-2">
+                <li className="flex items-center gap-2">🎧 Use fones para melhor experiência sonora</li>
+                <li className="flex items-center gap-2">⭐ Avalie as respostas para personalizar</li>
+                <li className="flex items-center gap-2">💾 Salve conteúdos importantes</li>
+                <li className="flex items-center gap-2">🗣️ Fale com o microfone para perguntas</li>
+              </ul>
+            </Card>
+          </div>
+        </ScrollArea>
 
         {/* Logout */}
         <div className="p-6 border-t border-gray-200">

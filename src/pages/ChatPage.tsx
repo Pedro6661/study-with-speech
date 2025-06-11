@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,6 +51,9 @@ const ChatPage: React.FC = () => {
       content: `Olá, ${user.name}! 🎓✨\n\nSou o SWS Assistant, seu companheiro de estudos com narração inteligente! Estou aqui para tornar seu aprendizado mais dinâmico e envolvente.\n\n🎯 **O que posso fazer por você:**\n• Explicar qualquer conceito de forma clara\n• Adaptar explicações ao seu nível\n• Narrar respostas com voz natural\n• Sugerir materiais de estudo\n• Criar exercícios práticos\n\nClique no botão 🔊 **Ouvir** para escutar minhas respostas narradas!\n\nSobre o que você gostaria de aprender hoje?`,
       timestamp: new Date()
     }]);
+    // Carregar chave da API salva
+    const savedApiKey = localStorage.getItem('sws-api-key') || '';
+    setApiKey(savedApiKey);
   }, [navigate]);
 
   const scrollToBottom = () => {
@@ -138,7 +140,10 @@ const ChatPage: React.FC = () => {
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    if (!apiKey) {
+    // Sempre buscar a chave mais recente do localStorage
+    const savedApiKey = localStorage.getItem('sws-api-key') || '';
+    setApiKey(savedApiKey);
+    if (!savedApiKey) {
       toast({
         title: "API Key necessária",
         description: "Configure sua chave da API do Google Gemini nas configurações.",
@@ -160,7 +165,7 @@ const ChatPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await generateResponse(inputMessage, currentLevel, apiKey);
+      const response = await generateResponse(inputMessage, currentLevel, savedApiKey);
       
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),

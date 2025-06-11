@@ -1,7 +1,12 @@
-
 let currentUtterance: SpeechSynthesisUtterance | null = null;
+let availableVoices: SpeechSynthesisVoice[] = [];
 
-export const speakText = (text: string): void => {
+export const speakText = (text: string, options?: {
+  rate?: number;
+  pitch?: number;
+  volume?: number;
+  voice?: string;
+}): void => {
   if (!('speechSynthesis' in window)) {
     console.warn('Speech synthesis not supported');
     return;
@@ -22,18 +27,24 @@ export const speakText = (text: string): void => {
   
   // Configurações para português brasileiro
   currentUtterance.lang = 'pt-BR';
-  currentUtterance.rate = 0.85; // Velocidade um pouco mais lenta para clareza
-  currentUtterance.pitch = 1;
-  currentUtterance.volume = 0.8;
+  currentUtterance.rate = options?.rate ?? 0.85;
+  currentUtterance.pitch = options?.pitch ?? 1;
+  currentUtterance.volume = options?.volume ?? 0.8;
 
-  // Tentar usar uma voz em português se disponível
-  const voices = speechSynthesis.getVoices();
-  const ptVoice = voices.find(voice => 
-    voice.lang.includes('pt') || voice.lang.includes('BR')
-  );
-  
-  if (ptVoice) {
-    currentUtterance.voice = ptVoice;
+  // Seleciona a voz
+  if (options?.voice) {
+    const selectedVoice = availableVoices.find(v => v.name === options.voice);
+    if (selectedVoice) {
+      currentUtterance.voice = selectedVoice;
+    }
+  } else {
+    // Tenta usar uma voz em português se disponível
+    const ptVoice = availableVoices.find(voice => 
+      voice.lang.includes('pt') || voice.lang.includes('BR')
+    );
+    if (ptVoice) {
+      currentUtterance.voice = ptVoice;
+    }
   }
 
   // Eventos
@@ -65,9 +76,26 @@ export const isSpeaking = (): boolean => {
   return 'speechSynthesis' in window && speechSynthesis.speaking;
 };
 
+export const getAvailableVoices = (): SpeechSynthesisVoice[] => {
+  return availableVoices;
+};
+
+export const getPortugueseVoices = (): SpeechSynthesisVoice[] => {
+  return availableVoices.filter(voice => 
+    voice.lang.includes('pt') || voice.lang.includes('BR')
+  );
+};
+
 // Carregar vozes quando disponíveis
 if ('speechSynthesis' in window) {
-  speechSynthesis.onvoiceschanged = () => {
-    console.log('Voices loaded:', speechSynthesis.getVoices().length);
+  const loadVoices = () => {
+    availableVoices = speechSynthesis.getVoices();
+    console.log('Voices loaded:', availableVoices.length);
   };
+
+  // Carrega as vozes imediatamente se já estiverem disponíveis
+  loadVoices();
+
+  // E também quando o evento de mudança de vozes for disparado
+  speechSynthesis.onvoiceschanged = loadVoices;
 }
