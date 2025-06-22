@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, Volume2, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import API_URL from '@/utils/api';
 
 interface AuthPageProps {
   onLogin: (userData: { name: string; email: string }) => void;
@@ -15,15 +15,59 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [signupData, setSignupData] = useState({ name: '', email: '', password: '' });
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin({ name: 'Usuário', email: loginData.email });
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao fazer login');
+      localStorage.setItem('sws-user', JSON.stringify(data.user));
+      localStorage.setItem('sws-token', data.token);
+      onLogin(data.user);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin({ name: signupData.name, email: signupData.email });
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(signupData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao cadastrar');
+      // Após cadastro, já faz login automático
+      const loginRes = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: signupData.email, password: signupData.password })
+      });
+      const loginData = await loginRes.json();
+      if (!loginRes.ok) throw new Error(loginData.error || 'Erro ao fazer login');
+      localStorage.setItem('sws-user', JSON.stringify(loginData.user));
+      localStorage.setItem('sws-token', loginData.token);
+      onLogin(loginData.user);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -40,6 +84,12 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
           <h1 className="text-4xl font-bold text-white mb-2">SWS</h1>
           <p className="text-white/90 text-lg">Study With Speech</p>
         </div>
+
+        {error && (
+          <div className="mb-4 text-red-600 text-center font-medium bg-red-50 border border-red-200 rounded p-2">
+            {error}
+          </div>
+        )}
 
         <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-2xl">
           <Tabs defaultValue="login" className="p-6">
@@ -87,8 +137,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                   </div>
                 </div>
                 
-                <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                  Entrar
+                <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700" disabled={loading}>
+                  {loading ? 'Entrando...' : 'Entrar'}
                 </Button>
               </form>
             </TabsContent>
@@ -147,8 +197,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                   </div>
                 </div>
                 
-                <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                  Criar Conta
+                <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700" disabled={loading}>
+                  {loading ? 'Criando...' : 'Criar Conta'}
                 </Button>
               </form>
             </TabsContent>

@@ -58,46 +58,28 @@ Pergunta do usuário: ${message}`;
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
+      'https://api.groq.com/openai/v1/chat/completions',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          contents: [
+          model: 'llama3-8b-8192',
+          messages: [
             {
-              parts: [
-                {
-                  text: systemPrompt
-                }
-              ]
+              role: 'system',
+              content: systemPrompt
+            },
+            {
+              role: 'user',
+              content: message
             }
           ],
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1024,
-          },
-          safetySettings: [
-            {
-              category: 'HARM_CATEGORY_HARASSMENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_HATE_SPEECH',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            }
-          ]
+          temperature: 0.7,
+          top_p: 0.95,
+          max_tokens: 1024
         })
       }
     );
@@ -106,15 +88,14 @@ Pergunta do usuário: ${message}`;
       throw new Error(`API error: ${response.status}`);
     }
 
-    const data: GeminiResponse = await response.json();
-    
-    if (!data.candidates || data.candidates.length === 0) {
+    const data = await response.json();
+    if (!data.choices || data.choices.length === 0) {
       throw new Error('No response generated');
     }
 
-    return data.candidates[0].content.parts[0].text;
+    return data.choices[0].message.content;
   } catch (error) {
-    console.error('Error calling Gemini API:', error);
+    console.error('Error calling Groq API:', error);
     throw error;
   }
 };

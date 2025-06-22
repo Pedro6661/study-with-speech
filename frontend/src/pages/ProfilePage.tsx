@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,11 +7,15 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ArrowLeft, User, Mail, Calendar, Edit3, Save, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import API_URL from '@/utils/api';
 
 const ProfilePage: React.FC = () => {
   const [userData, setUserData] = useState({ name: '', email: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({ name: '', email: '' });
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [questionsCount, setQuestionsCount] = useState(0);
+  const [savedCount, setSavedCount] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -25,6 +28,34 @@ const ProfilePage: React.FC = () => {
     const user = JSON.parse(savedUser);
     setUserData(user);
     setEditedData(user);
+
+    // Buscar imagem de perfil do backend
+    const token = localStorage.getItem('sws-token');
+    if (token) {
+      fetch(`${API_URL}/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(users => {
+          const current = Array.isArray(users) ? users.find((u: any) => u.email === user.email) : null;
+          if (current && current.profileImage) setProfileImage(current.profileImage);
+        });
+      // Estatísticas reais do backend
+      fetch(`${API_URL}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setQuestionsCount(data.length);
+          }
+        });
+    }
+    // Mensagens salvas continuam do localStorage
+    const savedMessages = JSON.parse(localStorage.getItem('sws-saved-messages') || '[]');
+    setSavedCount(savedMessages.length);
   }, [navigate]);
 
   const handleSave = () => {
@@ -56,6 +87,30 @@ const ProfilePage: React.FC = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        setProfileImage(base64);
+        // Salvar no backend
+        const token = localStorage.getItem('sws-token');
+        if (token) {
+          await fetch(`${API_URL}/profile-image`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ profileImage: base64 })
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -78,13 +133,33 @@ const ProfilePage: React.FC = () => {
         </div>
 
         {/* Perfil Card */}
-        <Card className="p-8 shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+        <Card className="p-6 flex flex-col items-center gap-6 bg-white/95 shadow-xl border-0">
+          <div className="relative group">
+            <label htmlFor="profile-image-upload" className="cursor-pointer">
+              {profileImage ? (
+                <img
+                  src={profileImage}
+                  alt="Foto de perfil"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-purple-300 shadow-lg hover:opacity-80 transition"
+                />
+              ) : (
+                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-200 to-blue-200 flex items-center justify-center text-5xl text-purple-600 border-4 border-purple-300 shadow-lg">
+                  <User className="w-16 h-16" />
+                </div>
+              )}
+              <input
+                id="profile-image-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageChange}
+              />
+            </label>
+            <div className="absolute bottom-2 right-2 bg-white/80 rounded-full p-2 shadow group-hover:bg-purple-100 transition">
+              <span className="text-xs text-purple-700 font-semibold">Trocar foto</span>
+            </div>
+          </div>
           <div className="text-center mb-8">
-            <Avatar className="w-24 h-24 mx-auto mb-4 ring-4 ring-purple-100">
-              <AvatarFallback className="text-2xl font-bold bg-gradient-to-br from-purple-500 to-blue-500 text-white">
-                {getInitials(userData.name)}
-              </AvatarFallback>
-            </Avatar>
             <h2 className="text-2xl font-bold text-gray-800">{userData.name}</h2>
             <p className="text-gray-600">{userData.email}</p>
           </div>
@@ -181,7 +256,7 @@ const ProfilePage: React.FC = () => {
                 <Card className="p-4 bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-purple-600">
-                      {Math.floor(Math.random() * 50) + 10}
+                      {questionsCount}
                     </div>
                     <div className="text-sm text-purple-700">Perguntas Feitas</div>
                   </div>
@@ -189,7 +264,7 @@ const ProfilePage: React.FC = () => {
                 <Card className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600">
-                      {Math.floor(Math.random() * 20) + 5}
+                      {savedCount}
                     </div>
                     <div className="text-sm text-green-700">Mensagens Salvas</div>
                   </div>

@@ -1,16 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Settings, Key, Volume2, Brain } from 'lucide-react';
+import { ArrowLeft, Settings, Volume2, Brain } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 const SettingsPage: React.FC = () => {
-  const [apiKey, setApiKey] = useState('');
   const [currentLevel, setCurrentLevel] = useState('intermediario');
   const [speechEnabled, setSpeechEnabled] = useState(true);
   const navigate = useNavigate();
@@ -25,17 +23,14 @@ const SettingsPage: React.FC = () => {
     }
 
     // Carregar configurações salvas
-    const savedApiKey = localStorage.getItem('sws-api-key') || '';
     const savedLevel = localStorage.getItem('sws-level') || 'intermediario';
     const savedSpeech = localStorage.getItem('sws-speech') !== 'false';
     
-    setApiKey(savedApiKey);
     setCurrentLevel(savedLevel);
     setSpeechEnabled(savedSpeech);
   }, [navigate]);
 
   const handleSaveSettings = () => {
-    localStorage.setItem('sws-api-key', apiKey);
     localStorage.setItem('sws-level', currentLevel);
     localStorage.setItem('sws-speech', speechEnabled.toString());
     
@@ -73,46 +68,6 @@ const SettingsPage: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          {/* API Key */}
-          <Card className="p-6 shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-gradient-to-r from-red-500 to-pink-500 rounded-full p-2">
-                  <Key className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">API Key do Google Gemini</h3>
-                  <p className="text-sm text-gray-600">Necessária para gerar respostas inteligentes</p>
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="apiKey" className="text-sm font-medium text-gray-700">
-                  Chave da API
-                </Label>
-                <Input
-                  id="apiKey"
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Cole sua API key do Google Gemini aqui..."
-                  className="mt-1"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Obtenha sua chave gratuita em{' '}
-                  <a 
-                    href="https://makersuite.google.com/app/apikey" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    Google AI Studio
-                  </a>
-                </p>
-              </div>
-            </div>
-          </Card>
-
           {/* Nível de Aprendizado */}
           <Card className="p-6 shadow-xl border-0 bg-white/95 backdrop-blur-sm">
             <div className="space-y-4">

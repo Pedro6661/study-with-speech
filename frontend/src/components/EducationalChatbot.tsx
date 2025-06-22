@@ -16,7 +16,7 @@ interface Message {
   type: 'user' | 'bot';
   content: string;
   timestamp: Date;
-  rating?: 'positive' | 'negative' | 'love';
+  rating?: 'positive' | 'negative';
   saved?: boolean;
 }
 
@@ -117,7 +117,7 @@ const EducationalChatbot: React.FC<EducationalChatbotProps> = ({ userData, onLog
     setIsSpeechEnabled(!isSpeechEnabled);
   };
 
-  const handleRateMessage = (messageId: string, rating: 'positive' | 'negative' | 'love') => {
+  const handleRateMessage = (messageId: string, rating: 'positive' | 'negative') => {
     setMessages(prev => prev.map(msg => 
       msg.id === messageId ? { ...msg, rating } : msg
     ));

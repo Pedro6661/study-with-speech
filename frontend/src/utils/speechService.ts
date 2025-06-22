@@ -6,6 +6,8 @@ export const speakText = (text: string, options?: {
   pitch?: number;
   volume?: number;
   voice?: string;
+  onend?: () => void;
+  onerror?: () => void;
 }): void => {
   if (!('speechSynthesis' in window)) {
     console.warn('Speech synthesis not supported');
@@ -55,11 +57,13 @@ export const speakText = (text: string, options?: {
   currentUtterance.onend = () => {
     console.log('Speech ended');
     currentUtterance = null;
+    if (options?.onend) options.onend();
   };
 
   currentUtterance.onerror = (event) => {
     console.error('Speech error:', event);
     currentUtterance = null;
+    if (options?.onerror) options.onerror();
   };
 
   speechSynthesis.speak(currentUtterance);

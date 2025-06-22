@@ -10,14 +10,17 @@ import ChatMessage from '@/components/ChatMessage';
 import DrawerMenu from '@/components/DrawerMenu';
 import { generateResponse } from '@/utils/aiService';
 import { speakText, stopSpeaking, isSpeaking } from '@/utils/speechService';
+import API_URL from '@/utils/api';
 
 interface Message {
   id: string;
   type: 'user' | 'bot';
   content: string;
   timestamp: Date;
-  rating?: 'positive' | 'negative' | 'love';
+  rating?: 'positive' | 'negative';
   saved?: boolean;
+  likes?: number;
+  dislikes?: number;
 }
 
 const ChatPage: React.FC = () => {
@@ -30,18 +33,39 @@ const ChatPage: React.FC = () => {
   const [currentLevel, setCurrentLevel] = useState('intermediario');
   const [apiKey, setApiKey] = useState('');
   const [savedMessages, setSavedMessages] = useState<string[]>([]);
+  const [savedMessagesCount, setSavedMessagesCount] = useState(0);
+  const [totalQuestions, setTotalQuestions] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
 
   // Verificar se usuário está logado
   useEffect(() => {
     const userData = localStorage.getItem('sws-user');
-    if (!userData) {
+    const token = localStorage.getItem('sws-token');
+    if (!userData || !token) {
       navigate('/');
       return;
     }
+
+    // Buscar estatísticas iniciais
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`${API_URL}/saved-messages`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setSavedMessagesCount(Array.isArray(data) ? data.length : 0);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar mensagens salvas:", error);
+      }
+    };
+
+    fetchStats();
 
     const user = JSON.parse(userData);
     // Mensagem de boas-vindas personalizada
@@ -124,32 +148,88 @@ const ChatPage: React.FC = () => {
     setIsSpeechEnabled(!isSpeechEnabled);
   };
 
-  const handleRateMessage = (messageId: string, rating: 'positive' | 'negative' | 'love') => {
-    setMessages(prev => prev.map(msg => 
-      msg.id === messageId ? { ...msg, rating } : msg
-    ));
+  const handleRateMessage = async (messageId: string, rating: 'positive' | 'negative') => {
+    const token = localStorage.getItem('sws-token');
+    if (!token) {
+      toast({
+        title: 'Sessão expirada',
+        description: 'Faça login novamente para avaliar mensagens.',
+        variant: 'destructive'
+      });
+      navigate('/');
+      return;
+    }
+    try {
+      const endpoint = rating === 'positive' ? 'like' : 'dislike';
+      const res = await fetch(`${API_URL}/messages/${messageId}/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao registrar avaliação');
+      setMessages(prev => prev.map(msg =>
+        msg.id === messageId
+          ? { ...msg, rating, likes: data.likes ?? msg.likes, dislikes: data.dislikes ?? msg.dislikes }
+          : msg
+      ));
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao registrar avaliação.',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const handleSaveMessage = (messageId: string) => {
-    setMessages(prev => prev.map(msg => 
-      msg.id === messageId ? { ...msg, saved: true } : msg
-    ));
-    setSavedMessages(prev => [...prev, messageId]);
+  const handleSaveMessage = async (messageId: string) => {
+    const token = localStorage.getItem('sws-token');
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_URL}/saved-messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ messageId })
+      });
+      if (!res.ok) throw new Error('Erro ao salvar mensagem');
+      
+      // Atualiza estado visual da mensagem
+      setMessages(prev => prev.map(msg =>
+        msg.id === messageId ? { ...msg, saved: true } : msg
+      ));
+      
+      // Atualiza contador
+      setSavedMessagesCount(prevCount => prevCount + 1);
+
+      toast({
+        title: "Resposta salva!",
+        description: "Você pode vê-la em 'Mensagens Salvas'.",
+      });
+
+    } catch (e) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar a mensagem. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    // Sempre buscar a chave mais recente do localStorage
-    const savedApiKey = localStorage.getItem('sws-api-key') || '';
-    setApiKey(savedApiKey);
-    if (!savedApiKey) {
+    const token = localStorage.getItem('sws-token');
+    if (!token) {
       toast({
-        title: "API Key necessária",
-        description: "Configure sua chave da API do Google Gemini nas configurações.",
-        variant: "destructive"
+        title: 'Sessão expirada',
+        description: 'Faça login novamente para enviar mensagens.',
+        variant: 'destructive'
       });
-      setIsDrawerOpen(true);
+      navigate('/');
       return;
     }
 
@@ -165,35 +245,49 @@ const ChatPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await generateResponse(inputMessage, currentLevel, savedApiKey);
-      
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: response,
-        timestamp: new Date()
-      };
+      // Envia mensagem para o backend
+      const res = await fetch(`${API_URL}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ content: inputMessage })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao enviar mensagem');
 
-      setMessages(prev => [...prev, botMessage]);
-      
+      // Adiciona ao estado as mensagens do usuário e do bot, ambas com IDs reais do banco
+      setMessages(prev => [
+        ...prev.filter((msg, idx) => !(msg.type === 'user' && idx === prev.length - 1)),
+        {
+          id: String(data.userMessage.id),
+          type: 'user',
+          content: data.userMessage.content,
+          timestamp: new Date(data.userMessage.createdAt),
+        },
+        {
+          id: String(data.botMessage.id),
+          type: 'bot',
+          content: data.botMessage.content,
+          timestamp: new Date(data.botMessage.createdAt),
+        }
+      ]);
       if (isSpeechEnabled) {
-        speakText(response);
+        speakText(data.botMessage.content);
       }
-
-    } catch (error) {
-      console.error('Error generating response:', error);
+    } catch (error: any) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: 'Desculpe, ocorreu um erro ao processar sua pergunta. Verifique sua conexão e tente novamente.',
+        content: error.message || 'Erro ao enviar mensagem.',
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
-      
       toast({
-        title: "Erro",
-        description: "Não foi possível gerar uma resposta. Verifique sua API key e conexão.",
-        variant: "destructive"
+        title: 'Erro',
+        description: error.message || 'Erro ao enviar mensagem.',
+        variant: 'destructive'
       });
     } finally {
       setIsLoading(false);
@@ -206,6 +300,66 @@ const ChatPage: React.FC = () => {
       handleSendMessage();
     }
   };
+
+  const handleSendSuggestion = async (text: string) => {
+    const token = localStorage.getItem('sws-token');
+    if (!token) {
+      toast({
+        title: 'Sessão expirada',
+        description: 'Faça login novamente para enviar sugestões.',
+        variant: 'destructive'
+      });
+      navigate('/');
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/suggestions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ text })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao enviar sugestão');
+      toast({
+        title: 'Sugestão enviada!',
+        description: 'Obrigado por contribuir com o app!',
+        variant: 'default'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao enviar sugestão.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleSpeak = (messageId: string, text: string) => {
+    setSpeakingMessageId(messageId);
+    speakText(text, {
+      onend: () => setSpeakingMessageId(null),
+      onerror: () => setSpeakingMessageId(null)
+    });
+  };
+
+  const handlePause = () => {
+    stopSpeaking();
+    setSpeakingMessageId(null);
+  };
+
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
+    const handleEnd = () => setSpeakingMessageId(null);
+    window.speechSynthesis.addEventListener('end', handleEnd);
+    window.speechSynthesis.addEventListener('error', handleEnd);
+    return () => {
+      window.speechSynthesis.removeEventListener('end', handleEnd);
+      window.speechSynthesis.removeEventListener('error', handleEnd);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50">
@@ -248,10 +402,11 @@ const ChatPage: React.FC = () => {
               <ChatMessage 
                 key={message.id} 
                 message={message} 
-                onSpeak={(text) => isSpeechEnabled && speakText(text)}
+                onSpeak={(text) => isSpeechEnabled && handleSpeak(message.id, text)}
+                onPause={handlePause}
                 onRate={handleRateMessage}
                 onSave={handleSaveMessage}
-                isSpeaking={isSpeaking()}
+                isSpeaking={speakingMessageId === message.id && isSpeaking()}
               />
             ))}
             {isLoading && (
@@ -318,8 +473,8 @@ const ChatPage: React.FC = () => {
         onLevelChange={setCurrentLevel}
         apiKey={apiKey}
         onApiKeyChange={setApiKey}
-        savedMessagesCount={savedMessages.length}
-        totalQuestions={messages.filter(m => m.type === 'user').length}
+        savedMessagesCount={savedMessagesCount}
+        totalQuestions={totalQuestions}
       />
     </div>
   );

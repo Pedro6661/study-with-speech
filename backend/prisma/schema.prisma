@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  email        String         @unique
+  password     String
+  name         String
+  profileImage String?
+  messages     Message[]
+  savedMessages SavedMessage[] // <--- ADICIONE ESTA LINHA
+  createdAt    DateTime       @default(now())
+}
+
+model Message {
+  id        Int            @id @default(autoincrement())
+  content   String
+  user      User           @relation(fields: [userId], references: [id])
+  userId    Int
+  createdAt DateTime       @default(now())
+  likes     Int            @default(0)
+  dislikes  Int            @default(0)
+  savedBy   SavedMessage[] // <--- ADICIONE ESTA LINHA
+}
+
+model Suggestion {
+  id        Int      @id @default(autoincrement())
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model SavedMessage {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  message   Message  @relation(fields: [messageId], references: [id])
+  messageId Int
+  createdAt DateTime @default(now())
+}

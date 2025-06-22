@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Volume2, User, Bot, ThumbsUp, ThumbsDown, Heart, Save, VolumeX } from 'lucide-react';
@@ -9,14 +8,17 @@ interface Message {
   type: 'user' | 'bot';
   content: string;
   timestamp: Date;
-  rating?: 'positive' | 'negative' | 'love';
+  rating?: 'positive' | 'negative';
   saved?: boolean;
+  likes?: number;
+  dislikes?: number;
 }
 
 interface ChatMessageProps {
   message: Message;
   onSpeak: (text: string) => void;
-  onRate: (messageId: string, rating: 'positive' | 'negative' | 'love') => void;
+  onPause: () => void;
+  onRate: (messageId: string, rating: 'positive' | 'negative') => void;
   onSave: (messageId: string) => void;
   isSpeaking?: boolean;
 }
@@ -24,6 +26,7 @@ interface ChatMessageProps {
 const ChatMessage: React.FC<ChatMessageProps> = ({ 
   message, 
   onSpeak, 
+  onPause,
   onRate, 
   onSave, 
   isSpeaking = false 
@@ -40,12 +43,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     ));
   };
 
-  const handleRate = (rating: 'positive' | 'negative' | 'love') => {
+  const handleRate = (rating: 'positive' | 'negative') => {
     onRate(message.id, rating);
     const ratingTexts = {
       positive: 'Obrigado pelo feedback positivo! 👍',
-      negative: 'Vamos melhorar! Obrigado pelo feedback 🤝',
-      love: 'Que bom que você amou! ❤️'
+      negative: 'Vamos melhorar! Obrigado pelo feedback 🤝'
     };
     toast({
       title: "Avaliação registrada",
@@ -101,7 +103,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 <div className="flex items-center justify-between">
                   {/* Botão de fala grande e intuitivo */}
                   <Button
-                    onClick={() => onSpeak(message.content)}
+                    onClick={isSpeaking ? onPause : () => onSpeak(message.content)}
                     className={`${
                       isSpeaking 
                         ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 animate-pulse' 
@@ -137,20 +139,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                       >
                         <ThumbsUp className="w-3 h-3" />
                       </Button>
-                      
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRate('love')}
-                        className={`h-8 w-8 p-0 rounded-full transition-all hover:scale-110 ${
-                          message.rating === 'love' 
-                            ? 'bg-red-100 text-red-600' 
-                            : 'hover:bg-red-50 text-gray-500'
-                        }`}
-                      >
-                        <Heart className="w-3 h-3" />
-                      </Button>
-                      
+                      {typeof message.likes === 'number' && (
+                        <span className="text-xs text-green-700 font-semibold min-w-[16px] text-center">{message.likes}</span>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -163,6 +154,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                       >
                         <ThumbsDown className="w-3 h-3" />
                       </Button>
+                      {typeof message.dislikes === 'number' && (
+                        <span className="text-xs text-gray-700 font-semibold min-w-[16px] text-center">{message.dislikes}</span>
+                      )}
                     </div>
                     
                     {/* Salvar */}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Sheet, 
   SheetContent, 
@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
+import API_URL from '@/utils/api';
 
 interface DrawerMenuProps {
   isOpen: boolean;
@@ -39,6 +40,25 @@ const DrawerMenu: React.FC<DrawerMenuProps> = ({
   totalQuestions
 }) => {
   const navigate = useNavigate();
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      const userData = JSON.parse(localStorage.getItem('sws-user') || '{}');
+      const token = localStorage.getItem('sws-token');
+      if (token && userData.email) {
+        fetch(`${API_URL}/users`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+          .then(res => res.json())
+          .then(users => {
+            const current = Array.isArray(users) ? users.find((u: any) => u.email === userData.email) : null;
+            if (current && current.profileImage) setProfileImage(current.profileImage);
+            else setProfileImage(null);
+          });
+      }
+    }
+  }, [isOpen]);
 
   const handleLogout = () => {
     localStorage.removeItem('sws-user');
@@ -74,7 +94,7 @@ const DrawerMenu: React.FC<DrawerMenuProps> = ({
     {
       icon: Settings,
       title: 'Configurações',
-      description: 'API Key e preferências',
+      description: 'Preferências',
       action: () => handleNavigation('/settings'),
       color: 'from-green-500 to-emerald-500'
     },
@@ -121,7 +141,15 @@ const DrawerMenu: React.FC<DrawerMenuProps> = ({
           <Card className="bg-white/10 border-white/20 p-3">
             <div className="flex items-center gap-3">
               <div className="bg-white/20 rounded-full p-2">
-                <User className="w-5 h-5 text-white" />
+                {profileImage ? (
+                  <img
+                    src={profileImage}
+                    alt="Foto de perfil"
+                    className="w-10 h-10 rounded-full object-cover border-2 border-purple-300"
+                  />
+                ) : (
+                  <User className="w-5 h-5 text-white" />
+                )}
               </div>
               <div className="text-left">
                 <p className="text-white font-medium">{userData.name}</p>
