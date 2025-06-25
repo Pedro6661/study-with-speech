@@ -16,7 +16,3 @@ Para iniciar o front:
 	npm start ou npm run dev
 
 obs: em prompts separados
-
-criar na 
-
-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
